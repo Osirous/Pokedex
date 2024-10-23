@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func startLoop() {
+func startLoop(cfg *config) {
 	input := bufio.NewScanner(os.Stdin)
 
 	for {
@@ -22,6 +22,10 @@ func startLoop() {
 		}
 
 		commandName := cleaned[0]
+		args := []string{}
+		if len(cleaned) > 1 {
+			args = cleaned[1:]
+		}
 
 		availableCommands := getCommands()
 
@@ -31,22 +35,45 @@ func startLoop() {
 			continue
 		}
 
-		command.callback()
+		err := command.callback(cfg, args...)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 }
 
 type cliCommand struct {
 	name        string
 	description string
-	callback    func() error
+	callback    func(*config, ...string) error
 }
 
 func getCommands() map[string]cliCommand {
 	return map[string]cliCommand{
+		"catch": {
+			name:        "catch {pokemon name}",
+			description: "Your chance to capture a pokemon!",
+			callback:    callbackCatch,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "A list of pokemon in your pokedex.",
+			callback:    callbackPokedex,
+		},
+		"inspect": {
+			name:        "inspect {pokemon name}",
+			description: "Examine a captured pokemon!",
+			callback:    callbackInspect,
+		},
 		"help": {
 			name:        "help",
 			description: "Prints the help menu.",
 			callback:    callbackHelp,
+		},
+		"explore": {
+			name:        "explore {location}",
+			description: "Shows pokemon in area.",
+			callback:    callbackExplore,
 		},
 		"exit": {
 			name:        "exit",
@@ -55,8 +82,13 @@ func getCommands() map[string]cliCommand {
 		},
 		"map": {
 			name:        "map",
-			description: "Shows a list of areas.",
+			description: "Shows the next list of areas.",
 			callback:    callbackMap,
+		},
+		"mapb": {
+			name:        "mapb",
+			description: "Shows the previous list of areas.",
+			callback:    callbackMapb,
 		},
 	}
 }
